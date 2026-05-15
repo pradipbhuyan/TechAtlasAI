@@ -116,6 +116,20 @@ html, body, [data-testid="stAppViewContainer"] {{ background:var(--bg)!important
 .status.disabled {{ color:var(--muted); background:rgba(100,116,139,.12); }}
 .launch {{ text-decoration:none!important; font-family:'Space Mono',monospace; font-size:.65rem; color:white!important; padding:7px 10px; border-radius:9px; background:linear-gradient(135deg,var(--accent),var(--accent2)); }}
 .launch.off {{ background:var(--surface2); color:var(--muted)!important; border:1px solid var(--border); }}
+div[data-testid="stPageLink"] a {
+    background: linear-gradient(135deg,var(--accent),var(--accent2)) !important;
+    color: white !important;
+    border-radius: 10px !important;
+    font-family: 'Space Mono', monospace !important;
+    font-size: .72rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: .08em !important;
+    text-align: center !important;
+    border: none !important;
+    padding: 8px 10px !important;
+    justify-content: center !important;
+}
+div[data-testid="stPageLink"] a:hover { opacity:.88; }
 .config-note {{ border:1px solid var(--border); background:var(--surface2); border-radius:14px; padding:14px; color:var(--muted); font-size:.82rem; line-height:1.45; }}
 .cost-box {{ border:1px solid var(--border); background:var(--surface2); border-radius:14px; padding:12px; margin-top:10px; }}
 .cost-line {{ display:flex; justify-content:space-between; gap:10px; color:var(--muted); font-family:'Space Mono',monospace; font-size:.68rem; margin:5px 0; }}
@@ -220,26 +234,57 @@ def status_class(status: str) -> str:
     return status if status in {"active", "beta", "disabled"} else "disabled"
 
 
-def app_url(app: Dict[str, str]) -> str:
-    if app.get("url"):
-        return app["url"]
-    page = app.get("page", "")
-    return f"/{page}" if page else "#"
+def app_page_path(app: Dict[str, str]) -> str:
+    """Return a Streamlit-native page path for st.page_link.
+
+    app_registry.py may use either:
+    - "page": "TelecomPulse_AI"
+    - "page": "pages/TelecomPulse_AI.py"
+    """
+    page = str(app.get("page", "")).strip()
+    if not page:
+        return ""
+    if page.startswith("pages/") and page.endswith(".py"):
+        return page
+    if page.endswith(".py"):
+        return f"pages/{page}"
+    return f"pages/{page}.py"
 
 
 def e(value: object) -> str:
     return html.escape(str(value or ""), quote=True)
 
 
-def render_tile(app: Dict[str, str]) -> str:
+def render_tile_card(app: Dict[str, str]) -> None:
+    """Render a tile visually, then use st.page_link for Streamlit-native navigation.
+
+    Do not use raw <a href=...> links for app navigation. Raw links can trigger a browser-level
+    reload and make the landing page ask for login again. st.page_link keeps navigation aligned
+    with Streamlit's multipage router, the same way the sidebar works.
+    """
     status = str(app.get("status", "disabled")).lower()
     disabled = status == "disabled"
     accent = e(app.get("accent", "#38BDF8"))
-    launch = '<span class="launch off">Unavailable</span>' if disabled else f'<a class="launch" href="{e(app_url(app))}" target="_self">Launch App</a>'
     cls = "tile disabled" if disabled else "tile"
-    # Keep this HTML left-aligned with no leading indentation; indented HTML can render as markdown code blocks.
-    return f'<div class="{cls}" style="border-top:4px solid {accent};"><div class="symbol" style="color:{accent};">{e(app.get("symbol","??"))}</div><div class="app-name">{e(app.get("name","Unnamed App"))}</div><div class="app-desc">{e(app.get("description",""))}</div><div class="category" style="color:{accent};">{e(app.get("category","Other"))}</div><div class="app-desc" style="margin-top:4px;">{e(app.get("cadence",""))}</div><div class="meta-row"><span class="status {status_class(status)}">{e(status)}</span>{launch}</div></div>'
-
+    st.markdown(
+        f'<div class="{cls}" style="border-top:4px solid {accent}; min-height:205px;">'
+        f'<div class="symbol" style="color:{accent};">{e(app.get("symbol", "??"))}</div>'
+        f'<div class="app-name">{e(app.get("name", "Unnamed App"))}</div>'
+        f'<div class="app-desc">{e(app.get("description", ""))}</div>'
+        f'<div class="category" style="color:{accent};">{e(app.get("category", "Other"))}</div>'
+        f'<div class="app-desc" style="margin-top:4px;">{e(app.get("cadence", ""))}</div>'
+        f'<div class="meta-row"><span class="status {status_class(status)}">{e(status)}</span></div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    if disabled:
+        st.button("Unavailable", disabled=True, use_container_width=True, key=f"disabled_{e(app.get('name','app'))}")
+    else:
+        page = app_page_path(app)
+        if page:
+            st.page_link(page, label=f"Launch {app.get('name', 'App')}", icon="🚀", use_container_width=True)
+        else:
+            st.button("Page missing", disabled=True, use_container_width=True, key=f"missing_{e(app.get('name','app'))}")
 
 def filtered_apps(query: str, category: str, status_filter: str, show_disabled: bool) -> List[Dict[str, str]]:
     out = []
@@ -370,9 +415,20 @@ def main() -> None:
     if group_by_category:
         for cat in sorted({a.get("category", "Other") for a in apps}):
             st.markdown(f"#### {e(cat)}")
-            st.markdown('<div class="grid">' + ''.join(render_tile(a) for a in apps if a.get("category") == cat) + '</div>', unsafe_allow_html=True)
+            cat_apps = [a for a in apps if a.get("category") == cat]
+            cols_per_row = 4
+            for row_start in range(0, len(cat_apps), cols_per_row):
+                cols = st.columns(cols_per_row)
+                for col, app in zip(cols, cat_apps[row_start:row_start + cols_per_row]):
+                    with col:
+                        render_tile_card(app)
     else:
-        st.markdown('<div class="grid">' + ''.join(render_tile(a) for a in apps) + '</div>', unsafe_allow_html=True)
+        cols_per_row = 4
+        for row_start in range(0, len(apps), cols_per_row):
+            cols = st.columns(cols_per_row)
+            for col, app in zip(cols, apps[row_start:row_start + cols_per_row]):
+                with col:
+                    render_tile_card(app)
 
     st.markdown("---")
     with st.expander("Optional: test selected GPT model and token-cost tracking"):
