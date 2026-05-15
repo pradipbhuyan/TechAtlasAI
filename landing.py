@@ -1,5 +1,6 @@
 import html
 import os
+from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
 
 import streamlit as st
@@ -12,6 +13,7 @@ except Exception:
 
 APP_NAME = "TechAtlas AI"
 APP_TAGLINE = "Executive Technology Knowledge Hub"
+SESSION_TIMEOUT_MINUTES = 15
 
 THEMES: Dict[str, Dict[str, str]] = {
     "Dark Neon Command Center": {"bg":"#070B16","surface":"#111827","surface2":"#0F172A","border":"#1E2D45","text":"#E2E8F0","muted":"#94A3B8","accent":"#00D4FF","accent2":"#7C3AED","success":"#10B981","warning":"#F59E0B","danger":"#EF4444"},
@@ -53,6 +55,7 @@ def init_state() -> None:
     defaults = {
         "authenticated": False,
         "login_user": "",
+        "login_time": None,
         "theme_name": "Midnight Blue Executive",
         "model_name": "gpt-5-mini",
         "session_input_tokens": 0,
@@ -132,8 +135,37 @@ def get_credentials() -> Dict[str, str]:
     return creds
 
 
+def logout() -> None:
+    st.session_state.authenticated = False
+    st.session_state.login_user = ""
+    st.session_state.login_time = None
+
+
+def is_session_valid() -> bool:
+    """Return True only when the login is active and inside the timeout window."""
+    if not st.session_state.get("authenticated", False):
+        return False
+    login_time = st.session_state.get("login_time")
+    if not isinstance(login_time, datetime):
+        logout()
+        return False
+    if datetime.now() > login_time + timedelta(minutes=SESSION_TIMEOUT_MINUTES):
+        logout()
+        return False
+    return True
+
+
+def minutes_remaining() -> int:
+    login_time = st.session_state.get("login_time")
+    if not isinstance(login_time, datetime):
+        return 0
+    expires_at = login_time + timedelta(minutes=SESSION_TIMEOUT_MINUTES)
+    remaining = expires_at - datetime.now()
+    return max(0, int(remaining.total_seconds() // 60))
+
+
 def require_login() -> None:
-    if st.session_state.authenticated:
+    if is_session_valid():
         return
     theme = THEMES.get(st.session_state.theme_name, THEMES["Midnight Blue Executive"])
     st.markdown(css(theme, hide_sidebar=True), unsafe_allow_html=True)
@@ -147,14 +179,16 @@ def require_login() -> None:
     login = st.button("Login", use_container_width=True)
     creds = get_credentials()
     if not creds:
-        st.warning("Set PRADIP_PASSWORD in Streamlit secrets or environment variables before login.")
+        st.warning("Set PRADIP_PASSWORD or ADMIN_PASSWORD in Streamlit secrets or environment variables before login.")
     if login:
         normalized = user_id.strip().lower()
         if normalized in creds and password == creds[normalized]:
             st.session_state.authenticated = True
             st.session_state.login_user = normalized
+            st.session_state.login_time = datetime.now()
             st.rerun()
         else:
+            logout()
             st.error("Invalid user ID or password.")
     st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
@@ -234,6 +268,10 @@ def _safe_index(options: list[str], value: str, default: int = 0) -> int:
 
 def sidebar() -> Tuple[str, str, str, bool, bool]:
     st.sidebar.markdown("### TechAtlas Controls")
+    st.sidebar.markdown("### Session")
+    st.sidebar.caption(f"Logged in as: {e(st.session_state.get('login_user', ''))}")
+    st.sidebar.caption(f"Session expires in about {minutes_remaining()} minute(s).")
+    st.sidebar.markdown("---")
     theme_names = list(THEMES.keys())
 
     if st.session_state.theme_name not in theme_names:
@@ -282,8 +320,7 @@ def sidebar() -> Tuple[str, str, str, bool, bool]:
     st.sidebar.markdown("### Configure apps")
     st.sidebar.markdown('<div class="config-note">Add, remove, rename or disable apps in <code>app_registry.py</code>. Keep app pages under the <code>pages/</code> folder.</div>', unsafe_allow_html=True)
     if st.sidebar.button("Logout", use_container_width=True):
-        st.session_state.authenticated = False
-        st.session_state.login_user = ""
+        logout()
         st.rerun()
     return query, category, status_filter, show_disabled, group_by_category
 
