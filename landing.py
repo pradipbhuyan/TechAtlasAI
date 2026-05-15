@@ -101,35 +101,46 @@ html, body, [data-testid="stAppViewContainer"] {{ background:var(--bg)!important
 .view-tabs {{ display:flex; gap:10px; border:1px solid var(--border); background:var(--surface); padding:10px; border-radius:16px; margin:18px 0 10px; }}
 .tab-pill {{ padding:8px 12px; border-radius:10px; font-family:'Space Mono',monospace; font-size:.72rem; color:var(--muted); border:1px solid transparent; }}
 .tab-pill.active {{ color:white; background:linear-gradient(135deg,var(--accent),var(--accent2)); }}
-.grid {{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; margin-top:18px; }}
-.tile {{ position:relative; min-height:230px; background:linear-gradient(145deg,var(--surface),var(--surface2)); border:1px solid var(--border); border-radius:18px; padding:18px; overflow:hidden; transition:.18s ease; }}
+ .grid {{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:22px; margin-top:18px; }}
+.tile-wrap {{ display:flex; flex-direction:column; gap:10px; height:100%; }}
+.tile {{ min-height:265px; height:265px; background:linear-gradient(145deg,var(--surface),var(--surface2)); border:1px solid var(--border); border-radius:18px; padding:22px 22px 18px 22px; overflow:hidden; display:flex; flex-direction:column; box-sizing:border-box; transition:.18s ease; }}
 .tile:hover {{ transform:translateY(-4px); box-shadow:0 18px 40px rgba(0,0,0,.22); border-color:var(--accent); }}
-.tile.disabled {{ opacity:.46; filter:grayscale(.85); }}
-.symbol {{ font-family:'Space Mono',monospace; font-weight:800; font-size:2.55rem; line-height:1; }}
-.app-name {{ color:var(--text); font-weight:800; font-size:1.05rem; margin-top:12px; }}
-.app-desc {{ color:var(--muted); font-size:.8rem; line-height:1.45; margin-top:8px; }}
-.category {{ font-family:'Space Mono',monospace; font-size:.68rem; margin-top:10px; }}
-.meta-row {{ position:absolute; left:18px; right:18px; bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:8px; }}
-.status {{ font-family:'Space Mono',monospace; font-size:.58rem; text-transform:uppercase; padding:5px 8px; border-radius:999px; border:1px solid var(--border); }}
-.status.active {{ color:#6ee7b7; background:rgba(16,185,129,.12); border-color:rgba(16,185,129,.45); }}
-.status.beta {{ color:#fcd34d; background:rgba(245,158,11,.12); border-color:rgba(245,158,11,.45); }}
-.status.disabled {{ color:var(--muted); background:rgba(100,116,139,.12); }}
+.tile.disabled {{ opacity:.48; filter:grayscale(.75); }}
+.symbol {{ font-family:'Space Mono',monospace; font-weight:800; font-size:3rem; line-height:1; margin-bottom:18px; letter-spacing:-.06em; }}
+.app-name {{ color:var(--text); font-weight:800; font-size:1.05rem; line-height:1.25; margin-bottom:14px; min-height:28px; }}
+.app-desc {{ color:var(--muted); font-size:.88rem; line-height:1.5; margin-bottom:12px; min-height:68px; }}
+.category {{ font-family:'Space Mono',monospace; font-size:.74rem; line-height:1.2; margin-bottom:auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+.meta-row {{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:16px; }}
+.status {{ display:inline-flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:.62rem; line-height:1; text-transform:uppercase; letter-spacing:.06em; border-radius:999px; padding:7px 10px; white-space:nowrap; border:1px solid var(--border); }}
+.status.active {{ color:#34d399; background:rgba(16,185,129,.16); border-color:rgba(16,185,129,.55); }}
+.status.beta {{ color:#fbbf24; background:rgba(245,158,11,.16); border-color:rgba(245,158,11,.55); }}
+.status.disabled {{ color:var(--muted); background:rgba(100,116,139,.16); border-color:rgba(100,116,139,.55); }}
+.cadence-pill {{ display:inline-flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:.62rem; line-height:1; text-transform:uppercase; letter-spacing:.06em; border-radius:999px; padding:7px 10px; white-space:nowrap; color:#cbd5e1; background:rgba(100,116,139,.12); border:1px solid rgba(100,116,139,.35); }}
 .launch {{ text-decoration:none!important; font-family:'Space Mono',monospace; font-size:.65rem; color:white!important; padding:7px 10px; border-radius:9px; background:linear-gradient(135deg,var(--accent),var(--accent2)); }}
 .launch.off {{ background:var(--surface2); color:var(--muted)!important; border:1px solid var(--border); }}
+div[data-testid="stPageLink"] {{ margin-top:0!important; }}
 div[data-testid="stPageLink"] a {{
-    background: linear-gradient(135deg,var(--accent),var(--accent2)) !important;
-    color: white !important;
-    border-radius: 10px !important;
-    font-family: 'Space Mono', monospace !important;
-    font-size: .72rem !important;
-    text-transform: uppercase !important;
-    letter-spacing: .08em !important;
-    text-align: center !important;
-    border: none !important;
-    padding: 8px 10px !important;
-    justify-content: center !important;
+    min-height:48px;
+    width:100%;
+    background:linear-gradient(135deg,var(--accent),var(--accent2))!important;
+    color:white!important;
+    border-radius:12px!important;
+    font-family:'Space Mono',monospace!important;
+    font-size:.78rem!important;
+    font-weight:800!important;
+    text-transform:uppercase!important;
+    letter-spacing:.06em!important;
+    text-align:center!important;
+    border:none!important;
+    text-decoration:none!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
 }}
-div[data-testid="stPageLink"] a:hover {{ opacity:.88; }}
+div[data-testid="stPageLink"] a:hover {{ opacity:.88; transform:translateY(-1px); }}
 .config-note {{ border:1px solid var(--border); background:var(--surface2); border-radius:14px; padding:14px; color:var(--muted); font-size:.82rem; line-height:1.45; }}
 .cost-box {{ border:1px solid var(--border); background:var(--surface2); border-radius:14px; padding:12px; margin-top:10px; }}
 .cost-line {{ display:flex; justify-content:space-between; gap:10px; color:var(--muted); font-family:'Space Mono',monospace; font-size:.68rem; margin:5px 0; }}
@@ -256,35 +267,42 @@ def e(value: object) -> str:
 
 
 def render_tile_card(app: Dict[str, str]) -> None:
-    """Render a tile visually, then use st.page_link for Streamlit-native navigation.
+    """Render a fixed-height aligned tile and use st.page_link for Streamlit-native navigation.
 
     Do not use raw <a href=...> links for app navigation. Raw links can trigger a browser-level
     reload and make the landing page ask for login again. st.page_link keeps navigation aligned
     with Streamlit's multipage router, the same way the sidebar works.
     """
-    status = str(app.get("status", "disabled")).lower()
+    status = str(app.get("status", "disabled")).lower().strip()
     disabled = status == "disabled"
     accent = e(app.get("accent", "#38BDF8"))
     cls = "tile disabled" if disabled else "tile"
+    status_cls = status_class(status)
+
     st.markdown(
-        f'<div class="{cls}" style="border-top:4px solid {accent}; min-height:205px;">'
+        f'<div class="tile-wrap">'
+        f'<div class="{cls}" style="border-top:5px solid {accent};">'
         f'<div class="symbol" style="color:{accent};">{e(app.get("symbol", "??"))}</div>'
         f'<div class="app-name">{e(app.get("name", "Unnamed App"))}</div>'
         f'<div class="app-desc">{e(app.get("description", ""))}</div>'
         f'<div class="category" style="color:{accent};">{e(app.get("category", "Other"))}</div>'
-        f'<div class="app-desc" style="margin-top:4px;">{e(app.get("cadence", ""))}</div>'
-        f'<div class="meta-row"><span class="status {status_class(status)}">{e(status)}</span></div>'
+        f'<div class="meta-row">'
+        f'<span class="status {status_cls}">{e(status)}</span>'
+        f'<span class="cadence-pill">{e(app.get("cadence", ""))}</span>'
+        f'</div>'
+        f'</div>'
         f'</div>',
         unsafe_allow_html=True,
     )
+
     if disabled:
-        st.button("Unavailable", disabled=True, use_container_width=True, key=f"disabled_{e(app.get('name','app'))}")
+        st.button("Unavailable", disabled=True, use_container_width=True, key=f"disabled_{app.get('symbol','app')}_{app.get('name','app')}")
     else:
         page = app_page_path(app)
         if page:
             st.page_link(page, label=f"Launch {app.get('name', 'App')}", icon="🚀", use_container_width=True)
         else:
-            st.button("Page missing", disabled=True, use_container_width=True, key=f"missing_{e(app.get('name','app'))}")
+            st.button("Page missing", disabled=True, use_container_width=True, key=f"missing_{app.get('symbol','app')}_{app.get('name','app')}")
 
 def filtered_apps(query: str, category: str, status_filter: str, show_disabled: bool) -> List[Dict[str, str]]:
     out = []
@@ -418,14 +436,14 @@ def main() -> None:
             cat_apps = [a for a in apps if a.get("category") == cat]
             cols_per_row = 4
             for row_start in range(0, len(cat_apps), cols_per_row):
-                cols = st.columns(cols_per_row)
+                cols = st.columns(cols_per_row, gap="large")
                 for col, app in zip(cols, cat_apps[row_start:row_start + cols_per_row]):
                     with col:
                         render_tile_card(app)
     else:
         cols_per_row = 4
         for row_start in range(0, len(apps), cols_per_row):
-            cols = st.columns(cols_per_row)
+            cols = st.columns(cols_per_row, gap="large")
             for col, app in zip(cols, apps[row_start:row_start + cols_per_row]):
                 with col:
                     render_tile_card(app)
