@@ -251,13 +251,42 @@ def sidebar() -> Tuple[str, str, str, bool, bool]:
         MODEL_OPTIONS,
         index=_safe_index(MODEL_OPTIONS, st.session_state.model_name),
     )
-
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Session token cost")
-    pricing = MODEL_PRICING_PER_1M.get(
-        st.session_state.model_name,
-        MODEL_PRICING_PER_1M[MODEL_OPTIONS[0]],
-    )
+    pricing = MODEL_PRICING_PER_1M.get(st.session_state.model_name, MODEL_PRICING_PER_1M[MODEL_OPTIONS[0]])
+    st.sidebar.markdown(f"""
+<div class="cost-box">
+  <div class="cost-line"><span>User</span><strong>{e(st.session_state.login_user)}</strong></div>
+  <div class="cost-line"><span>Model</span><strong>{e(st.session_state.model_name)}</strong></div>
+  <div class="cost-line"><span>Input</span><strong>{st.session_state.session_input_tokens:,}</strong></div>
+  <div class="cost-line"><span>Cached</span><strong>{st.session_state.session_cached_input_tokens:,}</strong></div>
+  <div class="cost-line"><span>Output</span><strong>{st.session_state.session_output_tokens:,}</strong></div>
+  <div class="cost-line"><span>Est. cost</span><strong>${st.session_state.session_cost_usd:.6f}</strong></div>
+</div>
+""", unsafe_allow_html=True)
+    st.sidebar.caption(f"Rates / 1M tokens: input ${pricing['input']}, cached ${pricing['cached_input']}, output ${pricing['output']}.")
+    if st.sidebar.button("Reset session cost", use_container_width=True):
+        st.session_state.session_input_tokens = 0
+        st.session_state.session_cached_input_tokens = 0
+        st.session_state.session_output_tokens = 0
+        st.session_state.session_cost_usd = 0.0
+        st.rerun()
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### Filter apps")
+    query = st.sidebar.text_input("Search apps", placeholder="AI, cloud, cyber, data...")
+    category = st.sidebar.selectbox("Category", ["All"] + sorted({a.get("category", "Other") for a in APP_REGISTRY}))
+    status_filter = st.sidebar.selectbox("Status", ["All", "active", "beta", "disabled"])
+    show_disabled = st.sidebar.toggle("Show disabled apps", value=True)
+    group_by_category = st.sidebar.toggle("Group by category", value=False)
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### Configure apps")
+    st.sidebar.markdown('<div class="config-note">Add, remove, rename or disable apps in <code>app_registry.py</code>. Keep app pages under the <code>pages/</code> folder.</div>', unsafe_allow_html=True)
+    if st.sidebar.button("Logout", use_container_width=True):
+        st.session_state.authenticated = False
+        st.session_state.login_user = ""
+        st.rerun()
+    return query, category, status_filter, show_disabled, group_by_category
+
 
 def ask_selected_model(prompt: str) -> str:
     api_key = get_secret("OPENAI_API_KEY")
