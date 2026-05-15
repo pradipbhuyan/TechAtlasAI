@@ -60,6 +60,8 @@ APP_NAME = "CloudPulse AI"
 APP_ICON = "☁️"
 APP_TAGLINE = "Executive Cloud Intelligence Briefing"
 FILE_PREFIX = "cloud_pulse"
+APP_KEY = FILE_PREFIX
+
 CREATOR_FOOTNOTE = "Content created by Pradip Bhuyan, Head of Delivery, TMT."
 
 # -----------------------------------------------------------------------------
@@ -140,6 +142,15 @@ DOMAIN_LABELS = {
     "strategic_deals_partnerships": ("🤝 Strategic Deals & Partnerships", "tag-strategy"),
 }
 
+def skey(name: str) -> str:
+    return f"{APP_KEY}_{name}"
+
+def sget(name: str, default=None):
+    return st.session_state.get(skey(name), default)
+
+def sset(name: str, value) -> None:
+    st.session_state[skey(name)] = value
+
 def today_str() -> str:
     return datetime.now().strftime("%Y-%m-%d")
 
@@ -147,9 +158,9 @@ def run_id() -> str:
     return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 def active_report_id() -> str:
-    if "report_id" not in st.session_state or not st.session_state.report_id:
-        st.session_state.report_id = today_str()
-    return st.session_state.report_id
+    if not sget("report_id"):
+        sset("report_id", today_str())
+    return sget("report_id")
 
 def rpath(ext: str, suffix: str = "") -> Path:
     return REPORT_DIR / f"{FILE_PREFIX}_{active_report_id()}{suffix}.{ext}"
@@ -538,7 +549,8 @@ def generate_pdf_report(report: dict, output_path: str):
 # Session and sidebar
 # -----------------------------------------------------------------------------
 for k, default in [("stage", None), ("draft", None), ("review", None), ("final", None), ("mp3_ready", False), ("email_sent", False), ("email_last_error", ""), ("report_id", None)]:
-    st.session_state.setdefault(k, default)
+    if skey(k) not in st.session_state:
+        sset(k, default)
 
 with st.sidebar:
     st.markdown("### 📡 CloudPulse AI")
@@ -570,17 +582,17 @@ with st.sidebar:
     force_mp3 = st.checkbox("Regenerate MP3 even if exists", value=False)
     new_briefing = st.checkbox("Create a new briefing run", value=False)
 
-if st.session_state.get("stage") is None and use_cache:
+if sget("stage") is None and use_cache:
     cf = load_json(rpath("json", "_final"))
     if cf:
-        st.session_state.final = cf
-        st.session_state.review = load_json(rpath("json", "_review"))
-        st.session_state.draft = load_json(rpath("json", "_draft"))
-        st.session_state.stage = "final"
-        st.session_state.mp3_ready = rpath("mp3").exists()
+        sset("final", cf)
+        sset("review", load_json(rpath("json", "_review")))
+        sset("draft", load_json(rpath("json", "_draft")))
+        sset("stage", "final")
+        sset("mp3_ready", rpath("mp3").exists())
         ds = load_json(delivery_status_path())
-        st.session_state.email_sent = bool(ds and ds.get("sent"))
-        st.session_state.email_last_error = "" if st.session_state.email_sent else (ds or {}).get("error", "")
+        sset("email_sent", bool(ds and ds.get("sent")))
+        sset("email_last_error", "") if sget("email_sent") else (ds or {}).get("error", "")
 
 # -----------------------------------------------------------------------------
 # Header and pipeline
@@ -594,7 +606,7 @@ with c2:
     run_btn = st.button("▶ Generate Briefing", use_container_width=True)
 st.markdown("---")
 STAGE_MAP = {None: ["pending", "pending", "pending", "pending"], "draft": ["active", "pending", "pending", "pending"], "review": ["done", "active", "pending", "pending"], "approved": ["done", "done", "active", "pending"], "final": ["done", "done", "done", "active"]}
-states = STAGE_MAP.get(st.session_state.stage, STAGE_MAP[None])
+states = STAGE_MAP.get(sget("stage"), STAGE_MAP[None])
 st.markdown('<div class="pipeline">' + ''.join(f'<div class="stage {s}">{l}</div>' for s, l in zip(states, ["1 · Draft", "2 · Editorial Review", "3 · PDF + Audio", "4 · Delivery"])) + '</div>', unsafe_allow_html=True)
 
 def email_cfg() -> dict:
@@ -605,14 +617,14 @@ def email_cfg() -> dict:
 # -----------------------------------------------------------------------------
 if run_btn:
     if new_briefing:
-        st.session_state.report_id = run_id()
-        st.session_state.draft = None
-        st.session_state.review = None
-        st.session_state.final = None
-        st.session_state.mp3_ready = False
-        st.session_state.email_sent = False
-        st.session_state.email_last_error = ""
-        st.session_state.stage = None
+        sset("report_id", run_id())
+        sset("draft", None)
+        sset("review", None)
+        sset("final", None)
+        sset("mp3_ready", False)
+        sset("email_sent", False)
+        sset("email_last_error", "")
+        sset("stage", None)
         use_cache = False
         force_mp3 = True
     if not OPENAI_API_KEY:
@@ -632,8 +644,8 @@ if run_btn:
                 draft["briefing_type"] = briefing_type
                 save_json(draft, draft_cache)
                 st.write("✅ Draft generated and saved.")
-            st.session_state.draft = draft
-            st.session_state.stage = "draft"
+            sset("draft", draft)
+            sset("stage", "draft")
         except Exception as e:
             st.error(f"Draft generation failed: {e}")
             st.stop()
@@ -641,11 +653,11 @@ if run_btn:
 
     if skip_review:
         st.info("⏭️ Editorial review skipped. Draft will be used as-is.")
-        st.session_state.review = None
-        st.session_state.final = dict(st.session_state.draft)
-        st.session_state.final["briefing_type"] = briefing_type
-        save_json(st.session_state.final, rpath("json", "_final"))
-        st.session_state.stage = "approved"
+        sset("review", None)
+        sset("final", dict(sget("draft")))
+        sget("final")["briefing_type"] = briefing_type
+        save_json(sget("final"), rpath("json", "_final"))
+        sset("stage", "approved")
     else:
         with st.status("🔍 Stage 2 · Running internal editorial review...", expanded=True) as s2:
             try:
@@ -655,23 +667,23 @@ if run_btn:
                     st.write("📂 Review loaded from cache.")
                 else:
                     st.write("🧐 Chief Editor reviewing clarity, authenticity and professionalism...")
-                    review = review_draft(client, model_choice, st.session_state.draft)
+                    review = review_draft(client, model_choice, sget("draft"))
                     save_json(review, review_cache)
                     st.write("✅ Review complete.")
-                st.session_state.review = review
-                st.session_state.stage = "review"
-                final = build_final(st.session_state.draft, review)
+                sset("review", review)
+                sset("stage", "review")
+                final = build_final(sget("draft"), review)
                 final["briefing_type"] = briefing_type
                 save_json(final, rpath("json", "_final"))
-                st.session_state.final = final
-                st.session_state.stage = "approved"
+                sset("final", final)
+                sset("stage", "approved")
                 st.write(f"✅ Final digest assembled - Score: {review.get('overall_score','?')}/100 - {review.get('overall_verdict','')} - {len(review.get('revised', {}))} section(s) revised internally")
             except Exception as e:
                 st.error(f"Editorial review failed: {e}")
                 st.stop()
             s2.update(label=f"✅ Stage 2 · Review complete - {review.get('overall_score','?')}/100", state="complete")
 
-    final = st.session_state.final
+    final = sget("final")
     mp3_out = str(rpath("mp3"))
     tts_cache = rpath("json", "_tts")
     with st.status("🎙️ Stage 3A · Generating audio script and MP3...", expanded=True) as s3:
@@ -686,17 +698,17 @@ if run_btn:
                     if not script:
                         raise ValueError("OpenAI returned an empty TTS script.")
                     final["tts_script"] = script
-                    st.session_state.final = final
+                    sset("final", final)
                     save_json({"tts_script": script}, tts_cache)
                     save_json(final, rpath("json", "_final"))
                     st.write(f"✅ TTS script generated - {len(script.split()):,} words.")
                 st.write(f"🔊 Synthesising speech with {voice_label}...")
                 generate_mp3(script, voice, mp3_out)
-                st.session_state.mp3_ready = True
+                sset("mp3_ready", True)
                 st.write(f"✅ MP3 created - {Path(mp3_out).stat().st_size / (1024 * 1024):.1f} MB")
             else:
                 st.write("📂 MP3 already exists for this report run.")
-                st.session_state.mp3_ready = True
+                sset("mp3_ready", True)
         except Exception as e:
             st.warning(f"TTS generation error: {e}")
         s3.update(label="✅ Stage 3A · Audio ready", state="complete")
@@ -704,27 +716,27 @@ if run_btn:
     pdf_out = str(pdf_path())
     with st.status("📄 Stage 3B · Generating professional PDF report...", expanded=True) as spdf:
         try:
-            generate_pdf_report(st.session_state.final, pdf_out)
+            generate_pdf_report(sget("final"), pdf_out)
             st.write(f"✅ PDF report created - {Path(pdf_out).name}")
         except Exception as e:
             st.warning(f"PDF generation error: {e}")
         spdf.update(label="✅ Stage 3B · PDF report ready", state="complete")
 
-    save_email_assets(st.session_state.final, str(email_html_path()), str(email_text_path()), pdf_attached=os.path.exists(pdf_out), mp3_attached=os.path.exists(mp3_out))
+    save_email_assets(sget("final"), str(email_html_path()), str(email_text_path()), pdf_attached=os.path.exists(pdf_out), mp3_attached=os.path.exists(mp3_out))
 
     if email_configured_now and auto_email_enabled:
         with st.status("📧 Stage 4 · Sending email delivery...", expanded=True) as s4:
             try:
-                result = send_email(email_cfg(), st.session_state.final, mp3_out if st.session_state.mp3_ready else None, pdf_out if os.path.exists(pdf_out) else None, include_mp3=include_mp3_email)
-                st.session_state.email_sent = True
-                st.session_state.email_last_error = ""
+                result = send_email(email_cfg(), sget("final"), mp3_out if sget("mp3_ready") else None, pdf_out if os.path.exists(pdf_out) else None, include_mp3=include_mp3_email)
+                sset("email_sent", True)
+                sset("email_last_error", "")
                 st.write(f"✅ Mailed to {RECIPIENT_EMAIL}. PDF attached: {result['pdf_attached']}; MP3 attached: {result['mp3_attached']}.")
                 if result.get("mp3_omitted_reason"):
                     st.write(f"ℹ️ {result['mp3_omitted_reason']}")
                 s4.update(label="✅ Stage 4 · Delivered", state="complete")
             except Exception as e:
-                st.session_state.email_sent = False
-                st.session_state.email_last_error = str(e)
+                sset("email_sent", False)
+                sset("email_last_error", str(e))
                 mark_email_failure(e)
                 st.warning(f"Email error: {e}")
                 s4.update(label="⚠️ Stage 4 · Email failed", state="error")
@@ -732,14 +744,14 @@ if run_btn:
         st.info("📧 Email skipped - set SMTP/email secrets or environment variables.")
     else:
         st.info("📧 Automatic email disabled. Use the manual email button after generation.")
-    st.session_state.stage = "final"
+    sset("stage", "final")
     st.rerun()
 
 # -----------------------------------------------------------------------------
 # Display
 # -----------------------------------------------------------------------------
-final = st.session_state.final
-review = st.session_state.review
+final = sget("final")
+review = sget("review")
 
 if final:
     if review:
@@ -825,7 +837,7 @@ if final:
 
     with t_audio:
         mp3_file = rpath("mp3")
-        if st.session_state.mp3_ready and mp3_file.exists():
+        if sget("mp3_ready") and mp3_file.exists():
             st.markdown('<div class="approved-banner">🎧 Audio briefing ready</div>', unsafe_allow_html=True)
             audio_bytes = mp3_file.read_bytes()
             st.audio(audio_bytes, format="audio/mpeg")
@@ -845,13 +857,13 @@ if final:
         st.markdown("---")
         st.markdown("### 📧 Email Delivery")
         ds = load_json(delivery_status_path()) or {}
-        if st.session_state.email_sent or ds.get("sent"):
+        if sget("email_sent") or ds.get("sent"):
             st.success(f"✅ Last delivery mailed to **{ds.get('recipient', RECIPIENT_EMAIL)}** at {ds.get('sent_at', 'unknown time')}")
             st.caption(f"PDF attached: {ds.get('pdf_attached')} · MP3 attached: {ds.get('mp3_attached')} · Attachment MB: {ds.get('attachment_mb_before_base64')}")
             if ds.get("mp3_omitted_reason"):
                 st.info(ds.get("mp3_omitted_reason"))
-        elif st.session_state.email_last_error or ds.get("error"):
-            st.warning(f"Last email attempt failed: {st.session_state.email_last_error or ds.get('error')}")
+        elif sget("email_last_error") or ds.get("error"):
+            st.warning(f"Last email attempt failed: {sget("email_last_error") or ds.get('error')}")
         elif not email_configured_now:
             st.markdown('<div class="review-issue"><strong>Email not configured.</strong><br>Set SMTP_HOST, SMTP_PORT, SENDER_EMAIL, SENDER_APP_PASSWORD and RECIPIENT_EMAIL in Streamlit secrets or environment variables.</div>', unsafe_allow_html=True)
         else:
@@ -860,14 +872,14 @@ if final:
         if st.button("📧 Send Email Now", use_container_width=True, disabled=manual_disabled):
             try:
                 result = send_email(email_cfg(), final, str(mp3_file) if mp3_file.exists() else None, str(pdf_file) if pdf_file.exists() else None, include_mp3=include_mp3_email)
-                st.session_state.email_sent = True
-                st.session_state.email_last_error = ""
+                sset("email_sent", True)
+                sset("email_last_error", "")
                 st.success(f"Email sent to {RECIPIENT_EMAIL}. PDF attached: {result['pdf_attached']}; MP3 attached: {result['mp3_attached']}.")
                 if result.get("mp3_omitted_reason"):
                     st.info(result["mp3_omitted_reason"])
             except Exception as e:
-                st.session_state.email_sent = False
-                st.session_state.email_last_error = str(e)
+                sset("email_sent", False)
+                sset("email_last_error", str(e))
                 mark_email_failure(e)
                 st.error(f"Manual email failed: {e}")
 
