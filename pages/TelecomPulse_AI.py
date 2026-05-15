@@ -116,42 +116,6 @@ html, body, [data-testid="stAppViewContainer"] { background-color:var(--bg)!impo
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# Login
-# -----------------------------------------------------------------------------
-def require_login() -> None:
-    allowed_users = {"admin": ADMIN_PASSWORD, "pradip": PRADIP_PASSWORD}
-    st.session_state.setdefault("authenticated", False)
-    st.session_state.setdefault("login_user", "")
-    if st.session_state.authenticated:
-        return
-
-    st.markdown(f'<div class="pulse-header" style="text-align:center;margin-top:3rem;">{APP_ICON} {APP_NAME}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="pulse-sub" style="text-align:center;">Secure {APP_TAGLINE}</div>', unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-    c1, c2, c3 = st.columns([1, 1.2, 1])
-    with c2:
-        st.markdown("### 🔐 Sign in")
-        with st.form("login_form", clear_on_submit=False):
-            username = st.text_input("Username", placeholder="admin or pradip").strip().lower()
-            password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Login", use_container_width=True)
-        missing_passwords = [u for u, pwd in allowed_users.items() if not pwd]
-        if missing_passwords:
-            st.warning("Set these password keys in .streamlit/secrets.toml: " + ", ".join(f"{u.upper()}_PASSWORD" for u in missing_passwords))
-        if submitted:
-            expected = allowed_users.get(username)
-            if expected and password == expected:
-                st.session_state.authenticated = True
-                st.session_state.login_user = username
-                st.rerun()
-            else:
-                st.error("Invalid username or password.")
-        st.caption("Allowed users: admin, pradip")
-    st.stop()
-
-require_login()
-
-# -----------------------------------------------------------------------------
 # Paths, sections, utilities
 # -----------------------------------------------------------------------------
 REPORT_DIR = Path("reports")
