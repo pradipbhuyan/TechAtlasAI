@@ -116,7 +116,7 @@ html, body, [data-testid="stAppViewContainer"] {{ background:var(--bg)!important
 .status.disabled {{ color:var(--muted); background:rgba(100,116,139,.12); }}
 .launch {{ text-decoration:none!important; font-family:'Space Mono',monospace; font-size:.65rem; color:white!important; padding:7px 10px; border-radius:9px; background:linear-gradient(135deg,var(--accent),var(--accent2)); }}
 .launch.off {{ background:var(--surface2); color:var(--muted)!important; border:1px solid var(--border); }}
-div[data-testid="stPageLink"] a {
+div[data-testid="stPageLink"] a {{
     background: linear-gradient(135deg,var(--accent),var(--accent2)) !important;
     color: white !important;
     border-radius: 10px !important;
@@ -128,8 +128,8 @@ div[data-testid="stPageLink"] a {
     border: none !important;
     padding: 8px 10px !important;
     justify-content: center !important;
-}
-div[data-testid="stPageLink"] a:hover { opacity:.88; }
+}}
+div[data-testid="stPageLink"] a:hover {{ opacity:.88; }}
 .config-note {{ border:1px solid var(--border); background:var(--surface2); border-radius:14px; padding:14px; color:var(--muted); font-size:.82rem; line-height:1.45; }}
 .cost-box {{ border:1px solid var(--border); background:var(--surface2); border-radius:14px; padding:12px; margin-top:10px; }}
 .cost-line {{ display:flex; justify-content:space-between; gap:10px; color:var(--muted); font-family:'Space Mono',monospace; font-size:.68rem; margin:5px 0; }}
