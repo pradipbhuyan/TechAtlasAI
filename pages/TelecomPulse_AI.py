@@ -104,7 +104,6 @@ html, body, [data-testid="stAppViewContainer"] { background-color:var(--bg)!impo
 </style>
 """, unsafe_allow_html=True)
 
-
 # -----------------------------------------------------------------------------
 # Paths and constants
 # -----------------------------------------------------------------------------
@@ -506,6 +505,8 @@ for k, default in [("stage", None), ("draft", None), ("review", None), ("final",
         st.session_state[k] = default
 
 with st.sidebar:
+    
+    st.markdown("---")
     st.markdown("### ⚙️ Configuration")
     st.markdown("---")
     st.markdown("**🔑 OpenAI**")
@@ -514,8 +515,6 @@ with st.sidebar:
     model_options = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"]
     default_model_index = model_options.index(DEFAULT_MODEL) if DEFAULT_MODEL in model_options else 1
     model_choice = st.selectbox("Model", model_options, index=default_model_index)
-    st.markdown("---")
-    briefing_type = st.selectbox("Briefing Type", ["Weekly Intelligence Brief", "Daily Flash Brief"], index=0)
     st.markdown("---")
     st.markdown("**🔊 Audio Voice**")
     voice_labels = list(VOICES.keys())
