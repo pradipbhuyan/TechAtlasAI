@@ -506,20 +506,7 @@ for k, default in [("stage", None), ("draft", None), ("review", None), ("final",
         st.session_state[k] = default
 
 with st.sidebar:
-    st.markdown(f"👤 Logged in as **{st.session_state.login_user}**")
-    if st.button("Logout", use_container_width=True):
-        st.session_state.authenticated = False
-        st.session_state.login_user = ""
-        st.rerun()
-    st.markdown("---")
-    st.markdown("### ⚙️ Configuration")
-    st.markdown("---")
-    st.markdown("**🔑 OpenAI**")
-    st.success("OpenAI key loaded" if OPENAI_API_KEY else "Set OPENAI_API_KEY in secrets/env")
     briefing_type = st.selectbox("Briefing Type", ["Weekly Intelligence Brief", "Daily Flash Brief"], index=0)
-    model_options = ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo"]
-    default_model_index = model_options.index(DEFAULT_MODEL) if DEFAULT_MODEL in model_options else 1
-    model_choice = st.selectbox("Model", model_options, index=default_model_index)
     st.markdown("---")
     st.markdown("**🔊 Audio Voice**")
     voice_labels = list(VOICES.keys())
